@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/favorites_provider.dart';
 
-class LyricsDetailScreen extends StatelessWidget {
+class LyricsDetailScreen extends StatefulWidget {
   final String docId;
   final String title;
   final String lyrics;
@@ -17,29 +17,37 @@ class LyricsDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<LyricsDetailScreen> createState() => _LyricsDetailScreenState();
+}
+
+class _LyricsDetailScreenState extends State<LyricsDetailScreen> {
+  double _fontSize = 18.0;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final favoritesProvider = Provider.of<FavoritesProvider>(context);
-    final isFavorite = favoritesProvider.isFavorite(docId);
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(title),
+        title: Text(widget.title),
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: isFavorite ? Colors.red : null,
-            ),
+            icon: const Icon(Icons.text_decrease_rounded),
+            tooltip: 'Decrease font size',
             onPressed: () {
-              favoritesProvider.toggleFavorite(docId);
-              ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(isFavorite ? 'Removed from favorites' : 'Added to favorites'),
-                  duration: const Duration(seconds: 1),
-                ),
-              );
+              setState(() {
+                if (_fontSize > 12) _fontSize -= 2;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.text_increase_rounded),
+            tooltip: 'Increase font size',
+            onPressed: () {
+              setState(() {
+                if (_fontSize < 40) _fontSize += 2;
+              });
             },
           ),
         ],
@@ -49,27 +57,31 @@ class LyricsDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            if (categoryName != null)
-              Container(
-                margin: const EdgeInsets.only(bottom: 24),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  categoryName!,
-                  style: TextStyle(
-                    color: theme.colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.bold,
+            if (widget.categoryName != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 24),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    widget.categoryName!,
+                    style: TextStyle(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ),
             Text(
-              lyrics,
+              widget.lyrics,
               style: theme.textTheme.bodyLarge?.copyWith(
                 height: 1.8,
-                fontSize: 18,
+                fontSize: _fontSize,
               ),
               textAlign: TextAlign.center,
             ),
