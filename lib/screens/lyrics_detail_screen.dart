@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../providers/favorites_provider.dart';
 
 class LyricsDetailScreen extends StatefulWidget {
@@ -22,6 +23,20 @@ class LyricsDetailScreen extends StatefulWidget {
 
 class _LyricsDetailScreenState extends State<LyricsDetailScreen> {
   double _fontSize = 18.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Keep screen on when viewing lyrics
+    WakelockPlus.enable();
+  }
+
+  @override
+  void dispose() {
+    // Release wakelock when leaving the screen
+    WakelockPlus.disable();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
