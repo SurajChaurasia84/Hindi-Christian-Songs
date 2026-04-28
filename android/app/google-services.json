@@ -1,21 +1,21 @@
 {
   "project_info": {
-    "project_number": "1050406949726",
-    "project_id": "hindichristiansongs",
-    "storage_bucket": "hindichristiansongs.firebasestorage.app"
+    "project_number": "499273460351",
+    "project_id": "hindi-christian-songs-1154e",
+    "storage_bucket": "hindi-christian-songs-1154e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1050406949726:android:2c0b48f5257da71da5b5cf",
+        "mobilesdk_app_id": "1:499273460351:android:c3b879d1aef87e7c376d4a",
         "android_client_info": {
-          "package_name": "com.hindichristiansongs"
+          "package_name": "com.hindichristian.songs"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyALyl0GRHQq7zZ0kymZizbSfjEWh1COcEE"
+          "current_key": "AIzaSyAPmqFUOi66HvC_T9GyhPqXVUXOFcSD8Ro"
         }
       ],
       "services": {
