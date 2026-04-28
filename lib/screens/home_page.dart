@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'about_app_screen.dart';
+import '../theme/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,19 +25,17 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     
+    // Determine the current effective brightness for the toggle
+    bool isDark = themeProvider.themeMode == ThemeMode.dark;
+    if (themeProvider.themeMode == ThemeMode.system) {
+      isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hindi Christian Songs'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            tooltip: 'Search Songs',
-            onPressed: () {
-              // TODO: Implement Search
-            },
-          ),
-        ],
       ),
       drawer: Drawer(
         child: ListView(
@@ -87,11 +88,12 @@ class _HomePageState extends State<HomePage> {
               },
             ),
             const Divider(),
-            ListTile(
-              leading: const Icon(Icons.settings_rounded),
-              title: const Text('Settings'),
-              onTap: () {
-                Navigator.pop(context);
+            SwitchListTile(
+              secondary: const Icon(Icons.dark_mode_rounded),
+              title: const Text('Dark Mode'),
+              value: isDark,
+              onChanged: (value) {
+                themeProvider.toggleTheme(value);
               },
             ),
             ListTile(
@@ -99,46 +101,74 @@ class _HomePageState extends State<HomePage> {
               title: const Text('About'),
               onTap: () {
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutAppScreen()),
+                );
               },
             ),
           ],
         ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        itemCount: _dummySongs.length,
-        separatorBuilder: (context, index) => const Divider(),
-        itemBuilder: (context, index) {
-          return ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            leading: CircleAvatar(
-              backgroundColor: theme.colorScheme.secondaryContainer,
-              child: Text(
-                '${index + 1}',
-                style: TextStyle(
-                  color: theme.colorScheme.onSecondaryContainer,
-                  fontWeight: FontWeight.bold,
+      body: Column(
+        children: [
+          // Search Bar Placeholder
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search lyrics...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: theme.colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30.0),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
               ),
             ),
-            title: Text(
-              _dummySongs[index],
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 16,
-              ),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.favorite_border_rounded),
-              onPressed: () {
-                // TODO: Toggle favorite status
+          ),
+          // Songs List
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 8),
+              itemCount: _dummySongs.length,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    child: Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSecondaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    _dummySongs[index],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.favorite_border_rounded),
+                    onPressed: () {
+                      // TODO: Toggle favorite status
+                    },
+                  ),
+                  onTap: () {
+                    // TODO: Navigate to lyrics detail page
+                  },
+                );
               },
             ),
-            onTap: () {
-              // TODO: Navigate to lyrics detail page
-            },
-          );
-        },
+          ),
+        ],
       ),
     );
   }

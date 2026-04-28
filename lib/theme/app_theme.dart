@@ -16,6 +16,8 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Color(0xFFF3EDF7), // Solid color matching Material 3 light background
+        surfaceTintColor: Colors.transparent, // Prevents color change on scroll
       ),
       dividerTheme: const DividerThemeData(space: 1),
     );
@@ -36,6 +38,8 @@ class AppTheme {
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Color(0xFF141218), // Solid color matching Material 3 dark background
+        surfaceTintColor: Colors.transparent, // Prevents color change on scroll
       ),
       dividerTheme: const DividerThemeData(space: 1),
     );
