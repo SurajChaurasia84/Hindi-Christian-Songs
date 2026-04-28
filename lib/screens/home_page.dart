@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'about_app_screen.dart';
+import 'settings_screen.dart';
 import '../theme/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,13 +18,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    
-    // Determine the current effective brightness for the toggle
-    bool isDark = themeProvider.themeMode == ThemeMode.dark;
-    if (themeProvider.themeMode == ThemeMode.system) {
-      isDark = MediaQuery.of(context).platformBrightness == Brightness.dark;
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -59,33 +53,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.home_rounded),
-              title: const Text('Home'),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.favorite_rounded),
-              title: const Text('Favorites'),
+              leading: const Icon(Icons.settings_rounded),
+              title: const Text('Settings'),
               onTap: () {
                 Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.category_rounded),
-              title: const Text('Categories'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            const Divider(),
-            SwitchListTile(
-              secondary: const Icon(Icons.dark_mode_rounded),
-              title: const Text('Dark Mode'),
-              value: isDark,
-              onChanged: (value) {
-                themeProvider.toggleTheme(value);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
               },
             ),
             ListTile(
