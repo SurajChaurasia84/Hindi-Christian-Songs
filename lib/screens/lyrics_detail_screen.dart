@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/favorites_provider.dart';
 
 class LyricsDetailScreen extends StatelessWidget {
+  final String docId;
   final String title;
   final String lyrics;
   final String? categoryName;
 
   const LyricsDetailScreen({
     super.key,
+    required this.docId,
     required this.title,
     required this.lyrics,
     this.categoryName,
@@ -15,17 +19,26 @@ class LyricsDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+    final isFavorite = favoritesProvider.isFavorite(docId);
     
     return Scaffold(
       appBar: AppBar(
         title: Text(title),
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite_border_rounded),
+            icon: Icon(
+              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              color: isFavorite ? Colors.red : null,
+            ),
             onPressed: () {
-              // TODO: Implement favorites
+              favoritesProvider.toggleFavorite(docId);
+              ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Added to favorites')),
+                SnackBar(
+                  content: Text(isFavorite ? 'Removed from favorites' : 'Added to favorites'),
+                  duration: const Duration(seconds: 1),
+                ),
               );
             },
           ),

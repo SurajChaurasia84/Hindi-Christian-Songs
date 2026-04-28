@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'about_app_screen.dart';
 import 'settings_screen.dart';
+import 'lyrics_detail_screen.dart';
+import '../providers/favorites_provider.dart';
 import '../theme/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,8 +15,10 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Placeholder songs list
-  final List<String> _dummySongs = [];
+  String _selectedCategory = 'All';
+  String? _selectedFavoriteCategory;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +28,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('Hindi Christian Songs'),
       ),
+      onDrawerChanged: (isOpened) {
+        if (isOpened) {
+          FocusScope.of(context).unfocus();
+        }
+      },
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -130,9 +140,27 @@ class _HomePageState extends State<HomePage> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
                   decoration: InputDecoration(
                     hintText: 'Search lyrics...',
                     prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty 
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            FocusScope.of(context).unfocus();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
                     filled: true,
                     fillColor: theme.colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
@@ -143,65 +171,288 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+              // Category Chips
+              SizedBox(
+                height: 50,
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('categories')
+                      .orderBy('name')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    List<String> categories = ['♥ Favourites', 'All'];
+                    if (snapshot.hasData) {
+                      final docs = snapshot.data!.docs;
+                      for (var doc in docs) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        if (data['name'] != null) {
+                          categories.add(data['name'] as String);
+                        }
+                      }
+                    }
+
+                    return ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final cat = categories[index];
+                        final isSelected = _selectedCategory == cat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ChoiceChip(
+                            label: Text(cat),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _selectedCategory = cat;
+                                  _selectedFavoriteCategory = null;
+                                });
+                              }
+                            },
+                            selectedColor: theme.colorScheme.primary,
+                            labelStyle: TextStyle(
+                              color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            showCheckmark: false,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
               // Songs List
               Expanded(
-                child: _dummySongs.isEmpty
-                    ? Center(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('songs')
+                      .orderBy('title')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return const Center(child: Text('Error loading songs.'));
+                    }
+
+                    var docs = snapshot.data?.docs ?? [];
+                    final favoritesProvider = Provider.of<FavoritesProvider>(context);
+
+                    // Apply client-side filter
+                    if (_selectedCategory == '♥ Favourites') {
+                      final favoriteDocs = docs.where((doc) => favoritesProvider.isFavorite(doc.id)).toList();
+                      
+                      if (favoriteDocs.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.favorite_border_rounded, size: 64, color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5)),
+                              const SizedBox(height: 16),
+                              Text('No favorites yet', style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 16)),
+                            ],
+                          ),
+                        );
+                      }
+
+                      if (_selectedFavoriteCategory == null) {
+                        // GROUP BY CATEGORY AND SHOW FOLDERS
+                        final Map<String, int> categoryCounts = {};
+                        for (var doc in favoriteDocs) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final cat = data['categoryName'] as String? ?? 'Unknown';
+                          categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1;
+                        }
+
+                        final folderCategories = categoryCounts.keys.toList()..sort();
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: folderCategories.length,
+                          itemBuilder: (context, index) {
+                            final cat = folderCategories[index];
+                            final count = categoryCounts[cat]!;
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              elevation: 0.5,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.3), width: 1),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                leading: const Icon(Icons.folder_rounded, color: Colors.amber, size: 40),
+                                title: Text(
+                                  '$cat Favorites',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                                ),
+                                subtitle: Text(
+                                  '$count Songs added',
+                                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                                ),
+                                trailing: const Icon(Icons.chevron_right_rounded),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedFavoriteCategory = cat;
+                                  });
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        // FILTER FAVORITES BY SPECIFIC CATEGORY
+                        docs = favoriteDocs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          return data['categoryName'] == _selectedFavoriteCategory;
+                        }).toList();
+                      }
+                    } else if (_selectedCategory != 'All') {
+                      docs = docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return data['categoryName'] == _selectedCategory;
+                      }).toList();
+                    }
+
+                    // Apply search filter
+                    if (_searchQuery.isNotEmpty) {
+                      docs = docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final title = (data['title'] ?? '').toString().toLowerCase();
+                        return title.contains(_searchQuery);
+                      }).toList();
+                    }
+
+                    if (docs.isEmpty) {
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.music_note_rounded,
+                              _searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.music_note_rounded,
                               size: 64,
                               color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No lyrics available yet',
+                              _searchQuery.isNotEmpty 
+                                ? 'No results found for "$_searchQuery"' 
+                                : 'No lyrics available yet',
                               style: TextStyle(
                                 color: theme.colorScheme.onSurfaceVariant,
                                 fontSize: 16,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        itemCount: _dummySongs.length,
-                        separatorBuilder: (context, index) => const Divider(),
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                            leading: CircleAvatar(
-                              backgroundColor: theme.colorScheme.secondaryContainer,
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  color: theme.colorScheme.onSecondaryContainer,
-                                  fontWeight: FontWeight.bold,
+                      );
+                    }
+
+                    final showBackButton = _selectedCategory == '♥ Favourites' && _selectedFavoriteCategory != null;
+                    final itemCount = docs.length + (showBackButton ? 1 : 0);
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: itemCount,
+                      itemBuilder: (context, index) {
+                        if (showBackButton && index == 0) {
+                          return Align(
+                            alignment: Alignment.centerLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: TextButton.icon(
+                                icon: const Icon(Icons.arrow_back, size: 18),
+                                label: const Text('Back to Languages', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedFavoriteCategory = null;
+                                  });
+                                },
+                                style: TextButton.styleFrom(
+                                  foregroundColor: theme.colorScheme.onSurfaceVariant,
+                                  padding: EdgeInsets.zero,
                                 ),
                               ),
                             ),
+                          );
+                        }
+
+                        final actualIndex = showBackButton ? index - 1 : index;
+                        final data = docs[actualIndex].data() as Map<String, dynamic>;
+                        final title = data['title'] ?? 'Unknown Title';
+                        final categoryName = data['categoryName'];
+                        final lyrics = data['lyrics'] ?? '';
+                        final docId = docs[actualIndex].id;
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0.5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(
+                              color: theme.colorScheme.outlineVariant.withOpacity(0.3),
+                              width: 1,
+                            ),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             title: Text(
-                              _dummySongs[index],
+                              title,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
+                            subtitle: categoryName != null 
+                              ? Text(
+                                  categoryName,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ) 
+                              : null,
                             trailing: IconButton(
-                              icon: const Icon(Icons.favorite_border_rounded),
+                              icon: Icon(
+                                favoritesProvider.isFavorite(docId) 
+                                  ? Icons.favorite_rounded 
+                                  : Icons.favorite_border_rounded,
+                                color: favoritesProvider.isFavorite(docId) 
+                                  ? Colors.red 
+                                  : null,
+                              ),
                               onPressed: () {
-                                // TODO: Toggle favorite status
+                                favoritesProvider.toggleFavorite(docId);
                               },
                             ),
                             onTap: () {
-                              // TODO: Navigate to lyrics detail page
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LyricsDetailScreen(
+                                    docId: docId,
+                                    title: title,
+                                    lyrics: lyrics,
+                                    categoryName: categoryName,
+                                  ),
+                                ),
+                              );
                             },
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
