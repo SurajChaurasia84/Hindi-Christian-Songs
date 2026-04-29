@@ -3,9 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class FavoritesProvider extends ChangeNotifier {
   Set<String> _favoriteIds = {};
+  bool _isLoaded = false;
   static const String _key = 'favorite_songs';
 
   Set<String> get favoriteIds => _favoriteIds;
+  bool get isLoaded => _isLoaded;
 
   FavoritesProvider() {
     _loadFavorites();
@@ -30,8 +32,9 @@ class FavoritesProvider extends ChangeNotifier {
     final List<String>? savedFavorites = prefs.getStringList(_key);
     if (savedFavorites != null) {
       _favoriteIds = savedFavorites.toSet();
-      notifyListeners();
     }
+    _isLoaded = true;
+    notifyListeners();
   }
 
   Future<void> _saveFavorites() async {
