@@ -86,7 +86,7 @@ class AboutAppScreen extends StatelessWidget {
               onTap: () async {
                 final Uri emailLaunchUri = Uri(
                   scheme: 'mailto',
-                  path: 'jaykashyapxy@gmail.com',
+                  path: 'jaykashyapxyz@gmail.com',
                 );
                 if (await canLaunchUrl(emailLaunchUri)) {
                   await launchUrl(emailLaunchUri);
@@ -108,7 +108,7 @@ class AboutAppScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "jaykashyapxy@gmail.com",
+                        "jaykashyapxyz@gmail.com",
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: theme.colorScheme.primary,
                           fontWeight: FontWeight.bold,
