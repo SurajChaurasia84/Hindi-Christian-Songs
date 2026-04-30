@@ -7,6 +7,8 @@ import 'lyrics_detail_screen.dart';
 import 'privacy_policy_screen.dart';
 import '../providers/favorites_provider.dart';
 import '../theme/theme_provider.dart';
+import 'package:unity_ads_plugin/unity_ads_plugin.dart';
+import '../services/ad_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -466,6 +468,26 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
+                ),
+                ListenableBuilder(
+                  listenable: AdService.instance,
+                  builder: (context, child) {
+                    if (!AdService.isInitialized) return const SizedBox.shrink();
+                    return SafeArea(
+                      child: Container(
+                        height: 50,
+                        alignment: Alignment.center,
+                        child: UnityBannerAd(
+                          placementId: AdService.bannerAdUnitId,
+                          size: BannerSize.standard,
+                          onLoad: (placementId) => print('Banner loaded: $placementId'),
+                          onClick: (placementId) => print('Banner clicked: $placementId'),
+                          onFailed: (placementId, error, message) => 
+                              print('Banner failed: $placementId, [$error] $message'),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

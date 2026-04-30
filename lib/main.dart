@@ -7,11 +7,17 @@ import 'screens/home_page.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
+import 'services/ad_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.android,
   );
+  
+  // Initialize Unity Ads
+  AdService.init();
+
   runApp(
     MultiProvider(
       providers: [

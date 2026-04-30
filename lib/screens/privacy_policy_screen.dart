@@ -28,7 +28,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSectionTitle('Information Collection and Use:', theme),
             const SizedBox(height: 8),
             const Text(
-              'We do not collect any personal information from users. However, the app may use third-party services like Firebase and Google AdMob which may collect data used to identify you.',
+              'We do not collect any personal information from users directly. However, the app uses third-party services that may collect information used to identify you, including your device\'s Advertising ID (AAID).',
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 24),
@@ -44,9 +44,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
             _buildSectionTitle('Third-party Services:', theme),
             const SizedBox(height: 8),
             const Text(
-              'The app may use services such as Google Firebase and Google AdMob. These services may collect information as per their own privacy policies.',
+              'The app uses services such as Google Firebase (database) and Unity Ads (advertisements). These services may collect information as per their own privacy policies. We recommend reviewing them:',
               style: TextStyle(fontSize: 16),
             ),
+            const SizedBox(height: 12),
+            _buildLink('Firebase Privacy Policy', 'https://firebase.google.com/support/privacy', theme),
+            _buildLink('Unity Ads Privacy Policy', 'https://unity.com/legal/privacy-policy', theme),
             const SizedBox(height: 24),
             
             _buildSectionTitle('Copyright Policy:', theme),
@@ -96,6 +99,23 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
             const SizedBox(height: 48),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLink(String text, String url, ThemeData theme) {
+    return InkWell(
+      onTap: () => launchUrl(Uri.parse(url)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Text(
+          text,
+          style: TextStyle(
+            color: theme.colorScheme.primary,
+            decoration: TextDecoration.underline,
+            fontSize: 15,
+          ),
         ),
       ),
     );
